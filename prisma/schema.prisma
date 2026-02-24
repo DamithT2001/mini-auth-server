@@ -1,0 +1,74 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id              String   @id @default(uuid())
+  email           String   @unique
+  password        String?
+  isEmailVerified Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  roles           UserRole[]
+  refreshTokens   RefreshToken[]
+  loginLogs       LoginLog[]
+}
+
+model Role {
+  id    String @id @default(uuid())
+  name  String @unique
+  users UserRole[]
+}
+
+model UserRole {
+  userId String
+  roleId String
+
+  user User @relation(fields: [userId], references: [id])
+  role Role @relation(fields: [roleId], references: [id])
+
+  @@id([userId, roleId])
+}
+
+model ClientApplication {
+  id            String   @id @default(uuid())
+  name          String
+  clientId      String   @unique
+  clientSecret  String
+  redirectUris  String[]
+  createdAt     DateTime @default(now())
+}
+
+model AuthorizationCode {
+  id         String   @id @default(uuid())
+  code       String   @unique
+  userId     String
+  clientId   String
+  expiresAt  DateTime
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  clientId  String
+  revoked   Boolean  @default(false)
+  expiresAt DateTime
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+model LoginLog {
+  id        String   @id @default(uuid())
+  userId    String
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+}

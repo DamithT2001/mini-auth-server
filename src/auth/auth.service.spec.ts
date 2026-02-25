@@ -26,7 +26,7 @@ describe('AuthService', () => {
   });
 
   describe('register', () => {
-    const dto = { email: 'test@example.com', password: 'password123' };
+    const dto = { email: 'test@example.com', password: 'Password1!' };
 
     it('should create user and return without password', async () => {
       mockPrisma.user.findUnique.mockResolvedValue(null);

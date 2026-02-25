@@ -12,8 +12,8 @@ export default tseslint.config(
   // Base JS rules
   eslint.configs.recommended,
 
-  // TypeScript (non type-aware, lighter & faster)
-  ...tseslint.configs.recommended,
+  // TypeScript (type-aware)
+  ...tseslint.configs.recommendedTypeChecked,
 
   // Prettier integration
   eslintPluginPrettierRecommended,

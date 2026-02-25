@@ -3,32 +3,43 @@ import { hash } from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
 import { RegisterDto } from './dto/register.dto';
 
+const BCRYPT_SALT_ROUNDS = 12;
+
 @Injectable()
 export class AuthService {
   constructor(private readonly prisma: PrismaService) {}
 
   async register(dto: RegisterDto) {
+    const normalizedEmail = dto.email.trim().toLowerCase();
+
     const existing = await this.prisma.user.findUnique({
-      where: { email: dto.email },
+      where: { email: normalizedEmail },
     });
 
     if (existing) {
       throw new ConflictException('Email already registered');
     }
 
-    const hashedPassword = await hash(dto.password, 12);
+    const hashedPassword = await hash(dto.password, BCRYPT_SALT_ROUNDS);
 
-    const user = await this.prisma.user.create({
-      data: {
-        email: dto.email,
-        password: hashedPassword,
-      },
-    });
+    try {
+      const user = await this.prisma.user.create({
+        data: {
+          email: normalizedEmail,
+          password: hashedPassword,
+        },
+      });
 
-    return {
-      id: user.id,
-      email: user.email,
-      createdAt: user.createdAt,
-    };
+      return {
+        id: user.id,
+        email: user.email,
+        createdAt: user.createdAt,
+      };
+    } catch (error) {
+      if ((error as any)?.code === 'P2002') {
+        throw new ConflictException('Email already registered');
+      }
+      throw error;
+    }
   }
 }

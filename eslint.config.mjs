@@ -6,7 +6,14 @@ import eslintPluginPrettierRecommended from 'eslint-plugin-prettier/recommended'
 
 export default tseslint.config(
   {
-    ignores: ['dist', 'node_modules', 'generated', 'eslint.config.mjs'],
+    ignores: [
+      'dist',
+      'node_modules',
+      'generated',
+      'eslint.config.mjs',
+      '.eslintrc.js',
+      'test/**/*',
+    ],
   },
 
   // Base JS rules
@@ -40,11 +47,12 @@ export default tseslint.config(
 
       '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/no-unused-vars': [
-        'warn',
+        'error',
         { argsIgnorePattern: '^_' },
       ],
       '@typescript-eslint/explicit-function-return-type': 'off',
       '@typescript-eslint/no-empty-function': 'off',
+      '@typescript-eslint/explicit-module-boundary-types': 'off',
 
       /*
        * -------- SAFETY --------
@@ -69,6 +77,12 @@ export default tseslint.config(
           endOfLine: 'auto',
         },
       ],
+    },
+  },
+  {
+    files: ['**/*.spec.ts'],
+    rules: {
+      '@typescript-eslint/no-explicit-any': 'off',
     },
   },
 );

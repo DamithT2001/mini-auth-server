@@ -10,65 +10,78 @@ model User {
   id              String   @id @default(uuid())
   email           String   @unique
   password        String?
-  isEmailVerified Boolean  @default(false)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  isEmailVerified Boolean  @default(false) @map("is_email_verified")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
 
-  roles           UserRole[]
-  refreshTokens   RefreshToken[]
-  loginLogs       LoginLog[]
+  roles         UserRole[]
+  refreshTokens RefreshToken[]
+  loginLogs     LoginLog[]
+
+  @@map("users")
 }
 
 model Role {
   id    String @id @default(uuid())
   name  String @unique
   users UserRole[]
+
+  @@map("roles")
 }
 
 model UserRole {
-  userId String
-  roleId String
+  userId String @map("user_id")
+  roleId String @map("role_id")
 
   user User @relation(fields: [userId], references: [id])
   role Role @relation(fields: [roleId], references: [id])
 
   @@id([userId, roleId])
+  @@map("user_roles")
 }
 
 model ClientApplication {
-  id            String   @id @default(uuid())
-  name          String
-  clientId      String   @unique
-  clientSecret  String
-  redirectUris  String[]
-  createdAt     DateTime @default(now())
+  id           String   @id @default(uuid())
+  name         String
+  clientId     String   @unique @map("client_id")
+  clientSecret String   @map("client_secret")
+  redirectUris String[] @map("redirect_uris")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@map("client_applications")
 }
 
 model AuthorizationCode {
-  id         String   @id @default(uuid())
-  code       String   @unique
-  userId     String
-  clientId   String
-  expiresAt  DateTime
+  id        String   @id @default(uuid())
+  code      String   @unique
+  userId    String   @map("user_id")
+  clientId  String   @map("client_id")
+  expiresAt DateTime @map("expires_at")
+
+  @@map("authorization_codes")
 }
 
 model RefreshToken {
   id        String   @id @default(uuid())
   token     String   @unique
-  userId    String
-  clientId  String
+  userId    String   @map("user_id")
+  clientId  String   @map("client_id")
   revoked   Boolean  @default(false)
-  expiresAt DateTime
+  expiresAt DateTime @map("expires_at")
 
   user User @relation(fields: [userId], references: [id])
+
+  @@map("refresh_tokens")
 }
 
 model LoginLog {
   id        String   @id @default(uuid())
-  userId    String
-  ipAddress String?
-  userAgent String?
-  createdAt DateTime @default(now())
+  userId    String   @map("user_id")
+  ipAddress String?  @map("ip_address")
+  userAgent String?  @map("user_agent")
+  createdAt DateTime @default(now()) @map("created_at")
 
   user User @relation(fields: [userId], references: [id])
+
+  @@map("login_logs")
 }

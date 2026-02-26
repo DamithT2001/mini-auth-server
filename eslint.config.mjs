@@ -6,7 +6,7 @@ import eslintPluginPrettierRecommended from 'eslint-plugin-prettier/recommended'
 
 export default tseslint.config(
   {
-    ignores: ['dist', 'node_modules', 'generated', 'eslint.config.mjs'],
+    ignores: ['dist', 'node_modules', 'generated', 'src/generated', 'eslint.config.mjs'],
   },
 
   // Base JS rules

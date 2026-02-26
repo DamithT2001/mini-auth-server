@@ -8,8 +8,8 @@ import { AuthModule } from './auth/auth.module';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
-    // Rate limiting configuration
-    ThrottlerModule.forRoot([{ ttl: 60, limit: 10 }]),
+    // Global rate limit: 60 requests per minute (baseline for all routes)
+    ThrottlerModule.forRoot([{ ttl: 60_000, limit: 60 }]),
     PrismaModule,
     AuthModule,
   ],

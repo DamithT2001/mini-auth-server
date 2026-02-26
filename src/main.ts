@@ -52,7 +52,9 @@ async function bootstrap() {
     `Swagger documentation available at: http://localhost:${port}/docs`,
   );
 }
+
 bootstrap().catch((err) => {
+  const logger = new Logger('Bootstrap');
   logger.error('Failed to start application:', err);
   process.exit(1);
 });

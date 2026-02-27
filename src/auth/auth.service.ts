@@ -5,9 +5,9 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { JwtService } from '@nestjs/jwt';
 import { compare, hash } from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
+import { JwtService } from '../infrastructure/security/jwt.service';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 
@@ -82,7 +82,7 @@ export class AuthService {
       }
     }
 
-    const roleNames = user.roles.map((userRole) => userRole.role.name);
+    const roles = user.roles.map((userRole) => userRole.role.name);
 
     await this.prisma.loginLog.create({
       data: {
@@ -92,18 +92,16 @@ export class AuthService {
       },
     });
 
-    const payload = {
+    const accessToken = this.jwtService.signAccessToken({
       sub: user.id,
       email: user.email,
-      roles: roleNames,
-    };
-
-    const accessToken = this.jwtService.sign(payload);
+      roles,
+    });
 
     return {
       accessToken,
       tokenType: 'Bearer',
-      expiresIn: this.configService.get<string>('JWT_ACCESS_EXPIRES_IN'),
+      expiresIn: this.configService.getOrThrow<string>('JWT_ACCESS_EXPIRES_IN'),
     };
   }
 }

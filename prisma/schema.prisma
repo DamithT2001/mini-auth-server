@@ -18,6 +18,7 @@ model User {
   refreshTokens RefreshToken[]
   loginLogs     LoginLog[]
 
+  @@index([email])
   @@map("users")
 }
 

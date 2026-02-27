@@ -50,6 +50,7 @@ async function bootstrap() {
   logger.log(`Application is running on: http://localhost:${port}`);
   logger.log(
     `Swagger documentation available at: http://localhost:${port}/docs`,
+  logger.log(`Health check available at: http://localhost:${port}/health`);
   );
 }
 

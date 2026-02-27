@@ -53,7 +53,7 @@ export class JwtService implements OnModuleInit {
       issuer: this.issuer,
       audience: this.audience,
       expiresIn: this.accessExpiresIn,
-    });
+    } as jwt.SignOptions);
   }
 
   verifyAccessToken<T = unknown>(token: string): T {

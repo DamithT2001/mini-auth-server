@@ -1,13 +1,25 @@
-import { ConflictException, Injectable } from '@nestjs/common';
-import { hash } from 'bcrypt';
+import {
+  ConflictException,
+  ForbiddenException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { JwtService } from '@nestjs/jwt';
+import { compare, hash } from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
+import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 
 const BCRYPT_SALT_ROUNDS = 12;
 
 @Injectable()
 export class AuthService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly jwtService: JwtService,
+    private readonly configService: ConfigService,
+  ) {}
 
   async register(dto: RegisterDto) {
     const existing = await this.prisma.user.findUnique({
@@ -31,6 +43,67 @@ export class AuthService {
       id: user.id,
       email: user.email,
       createdAt: user.createdAt,
+    };
+  }
+
+  async login(dto: LoginDto, ipAddress?: string, userAgent?: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { email: dto.email },
+      include: {
+        roles: {
+          include: {
+            role: true,
+          },
+        },
+      },
+    });
+
+    if (!user || !user.password) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
+    const passwordValid = await compare(dto.password, user.password);
+
+    if (!passwordValid) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
+    if (!user.isEmailVerified) {
+      throw new ForbiddenException('Email address is not verified');
+    }
+
+    if (dto.clientId) {
+      const client = await this.prisma.clientApplication.findUnique({
+        where: { clientId: dto.clientId },
+      });
+
+      if (!client) {
+        throw new UnauthorizedException('Invalid client');
+      }
+    }
+
+    const roleNames = user.roles.map((userRole) => userRole.role.name);
+
+    await this.prisma.loginLog.create({
+      data: {
+        userId: user.id,
+        ipAddress,
+        userAgent,
+      },
+    });
+
+    const payload = {
+      sub: user.id,
+      email: user.email,
+      roles: roleNames,
+    };
+
+    const accessToken = this.jwtService.sign(payload);
+
+    return {
+      accessToken,
+      tokenType: 'Bearer',
+      expiresIn: this.configService.get<string>('JWT_ACCESS_EXPIRES_IN'),
     };
   }
 }

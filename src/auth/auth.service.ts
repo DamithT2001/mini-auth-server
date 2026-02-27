@@ -72,14 +72,12 @@ export class AuthService {
       throw new ForbiddenException('Email address is not verified');
     }
 
-    if (dto.clientId) {
-      const client = await this.prisma.clientApplication.findUnique({
-        where: { clientId: dto.clientId },
-      });
+    const client = await this.prisma.clientApplication.findUnique({
+      where: { clientId: dto.clientId },
+    });
 
-      if (!client) {
-        throw new UnauthorizedException('Invalid client');
-      }
+    if (!client) {
+      throw new UnauthorizedException('Invalid client');
     }
 
     const roles = user.roles.map((userRole) => userRole.role.name);

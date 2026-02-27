@@ -1,5 +1,5 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsEmail, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger';
+import { IsEmail, IsNotEmpty, IsString } from 'class-validator';
 
 export class LoginDto {
   @ApiProperty({
@@ -18,11 +18,11 @@ export class LoginDto {
   @IsNotEmpty()
   password: string;
 
-  @ApiPropertyOptional({
-    example: 'web-client-123',
-    description: 'Optional OAuth client ID for client-scoped authentication',
+  @ApiProperty({
+    example: 'mobile-app-prod',
+    description: 'OAuth client ID',
   })
-  @IsOptional()
   @IsString()
-  clientId?: string;
+  @IsNotEmpty()
+  clientId: string;
 }

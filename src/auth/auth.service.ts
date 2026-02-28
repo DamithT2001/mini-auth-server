@@ -12,7 +12,6 @@ import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 
 const BCRYPT_SALT_ROUNDS = 12;
-const DEFAULT_TOKEN_EXPIRY_SECONDS = 3600;
 
 @Injectable()
 export class AuthService {
@@ -100,22 +99,7 @@ export class AuthService {
     return {
       accessToken,
       tokenType: 'Bearer',
-      expiresIn: this.parseExpiresInSeconds(
-        this.configService.getOrThrow<string>('JWT_ACCESS_EXPIRES_IN'),
-      ),
+      expiresIn: this.configService.getOrThrow<number>('JWT_ACCESS_EXPIRES_IN'),
     };
-  }
-
-  private parseExpiresInSeconds(expiry: string): number {
-    const match = expiry.match(/^(\d+)([smhd]?)$/);
-    if (!match) return DEFAULT_TOKEN_EXPIRY_SECONDS;
-    const value = parseInt(match[1], 10);
-    const multipliers: Record<string, number> = {
-      s: 1,
-      m: 60,
-      h: 3600,
-      d: 86400,
-    };
-    return value * (multipliers[match[2]] ?? 1);
   }
 }

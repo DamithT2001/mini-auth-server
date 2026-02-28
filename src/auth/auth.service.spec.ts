@@ -28,7 +28,7 @@ const mockJwtService = {
 };
 
 const mockConfigService = {
-  getOrThrow: jest.fn().mockReturnValue('15m'),
+  getOrThrow: jest.fn().mockReturnValue(900),
 };
 
 describe('AuthService', () => {
@@ -102,7 +102,7 @@ describe('AuthService', () => {
         clientId: loginDto.clientId,
       });
       mockPrisma.loginLog.create.mockResolvedValue({});
-      mockConfigService.getOrThrow.mockReturnValue('15m');
+      mockConfigService.getOrThrow.mockReturnValue(900);
       mockJwtService.signAccessToken.mockReturnValue('signed.jwt.token');
 
       const result = await service.login(loginDto, '127.0.0.1', 'jest');

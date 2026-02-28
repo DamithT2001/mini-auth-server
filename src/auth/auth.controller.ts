@@ -36,7 +36,7 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @Throttle({ default: { ttl: 60_000, limit: 10 } })
   @ApiOperation({ summary: 'Login user' })
-  @ApiOkResponse({ description: 'Login successful, returns access token' })
+  @ApiOkResponse({ description: 'Login successful' })
   @ApiBadRequestResponse({ description: 'Validation failed' })
   @ApiUnauthorizedResponse({ description: 'Invalid credentials or client' })
   @ApiForbiddenResponse({ description: 'Email address is not verified' })

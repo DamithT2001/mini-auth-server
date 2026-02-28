@@ -82,6 +82,12 @@ export class AuthService {
 
     const roles = user.roles.map((userRole) => userRole.role.name);
 
+    const accessToken = this.jwtService.signAccessToken({
+      sub: user.id,
+      email: user.email,
+      roles,
+    });
+
     await this.prisma.loginLog.create({
       data: {
         userId: user.id,
@@ -90,16 +96,10 @@ export class AuthService {
       },
     });
 
-    const accessToken = this.jwtService.signAccessToken({
-      sub: user.id,
-      email: user.email,
-      roles,
-    });
-
     return {
       accessToken,
       tokenType: 'Bearer',
-      expiresIn: this.configService.getOrThrow<string>('JWT_ACCESS_EXPIRES_IN'),
+      expiresIn: this.configService.getOrThrow<number>('JWT_ACCESS_EXPIRES_IN'),
     };
   }
 }

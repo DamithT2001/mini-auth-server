@@ -15,8 +15,5 @@ CREATE UNIQUE INDEX "email_verification_tokens_token_hash_key" ON "email_verific
 -- CreateIndex
 CREATE INDEX "email_verification_tokens_user_id_idx" ON "email_verification_tokens"("user_id");
 
--- CreateIndex
-CREATE INDEX "users_email_idx" ON "users"("email");
-
 -- AddForeignKey
 ALTER TABLE "email_verification_tokens" ADD CONSTRAINT "email_verification_tokens_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;

@@ -19,7 +19,6 @@ model User {
   loginLogs     LoginLog[]
   emailVerificationTokens EmailVerificationToken[]
 
-  @@index([email])
   @@map("users")
 }
 

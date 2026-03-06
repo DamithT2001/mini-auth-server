@@ -28,6 +28,10 @@ export class AuthService {
     private readonly mailService: MailService,
   ) {}
 
+  /**
+   * Creates a new user with a hashed password and triggers email verification.
+   * Returns partial success if the verification email cannot be delivered.
+   */
   async register(dto: RegisterDto) {
     const existing = await this.prisma.user.findUnique({
       where: { email: dto.email },
@@ -82,6 +86,10 @@ export class AuthService {
     };
   }
 
+  /**
+   * Validates credentials, enforces email verification, and issues a signed JWT access token.
+   * Logs each attempt with IP and User-Agent for audit purposes.
+   */
   async login(dto: LoginDto, ipAddress?: string, userAgent?: string) {
     const user = await this.prisma.user.findUnique({
       where: { email: dto.email },
@@ -139,6 +147,10 @@ export class AuthService {
     };
   }
 
+  /**
+   * Resends the verification email. Responds silently for unknown or already-verified
+   * accounts to prevent user enumeration.
+   */
   async resendVerificationEmail(dto: ResendVerificationDto): Promise<void> {
     const user = await this.prisma.user.findUnique({
       where: { email: dto.email },

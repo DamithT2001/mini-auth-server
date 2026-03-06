@@ -12,6 +12,10 @@ export class EmailVerificationService {
     return createHash('sha256').update(token).digest('hex');
   }
 
+  /**
+   * Generates a secure random token, stores its SHA-256 hash, and invalidates any prior token.
+   * The raw token is returned once and must be delivered to the user immediately.
+   */
   async generate(userId: string): Promise<string> {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
 
@@ -40,6 +44,10 @@ export class EmailVerificationService {
     return rawToken;
   }
 
+  /**
+   * Validates the raw token against its stored hash, enforces expiry, and marks the user's
+   * email as verified. Cleans up the token record on success or expiry.
+   */
   async verify(rawToken: string): Promise<void> {
     const tokenHash = this.hashToken(rawToken);
 

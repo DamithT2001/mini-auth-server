@@ -184,4 +184,61 @@ describe('AuthService', () => {
       expect(mockPrisma.loginLog.create).not.toHaveBeenCalled();
     });
   });
+
+  describe('resendVerificationEmail', () => {
+    const dto = { email: 'test@example.com' };
+
+    it('should return silently when user not found', async () => {
+      mockPrisma.user.findUnique.mockResolvedValue(null);
+
+      await expect(
+        service.resendVerificationEmail(dto),
+      ).resolves.toBeUndefined();
+      expect(mockEmailVerificationService.generate).not.toHaveBeenCalled();
+    });
+
+    it('should return silently when email is already verified', async () => {
+      mockPrisma.user.findUnique.mockResolvedValue({
+        id: '1',
+        email: dto.email,
+        isEmailVerified: true,
+      });
+
+      await expect(
+        service.resendVerificationEmail(dto),
+      ).resolves.toBeUndefined();
+      expect(mockEmailVerificationService.generate).not.toHaveBeenCalled();
+    });
+
+    it('should send verification email for unverified user', async () => {
+      mockPrisma.user.findUnique.mockResolvedValue({
+        id: '1',
+        email: dto.email,
+        isEmailVerified: false,
+      });
+
+      await service.resendVerificationEmail(dto);
+
+      expect(mockEmailVerificationService.generate).toHaveBeenCalledWith('1');
+      expect(mockMailService.sendVerificationEmail).toHaveBeenCalledWith(
+        dto.email,
+        'raw-verification-token',
+      );
+    });
+
+    it('should not throw when email delivery fails', async () => {
+      mockPrisma.user.findUnique.mockResolvedValue({
+        id: '1',
+        email: dto.email,
+        isEmailVerified: false,
+      });
+      mockMailService.sendVerificationEmail.mockRejectedValue(
+        new Error('SMTP error'),
+      );
+
+      await expect(
+        service.resendVerificationEmail(dto),
+      ).resolves.toBeUndefined();
+    });
+  });
 });

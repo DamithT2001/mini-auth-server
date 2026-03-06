@@ -43,6 +43,9 @@ export class JwtService implements OnModuleInit {
     );
   }
 
+  /**
+   * Signs a short-lived JWT access token using the RS256 private key.
+   */
   signAccessToken(payload: {
     sub: string;
     email: string;
@@ -56,6 +59,10 @@ export class JwtService implements OnModuleInit {
     } as jwt.SignOptions);
   }
 
+  /**
+   * Verifies a JWT access token against the RS256 public key, issuer, and audience.
+   * Throws if the token is invalid, expired, or has an unexpected issuer/audience.
+   */
   verifyAccessToken<T = unknown>(token: string): T {
     return jwt.verify(token, this.publicKey, {
       algorithms: ['RS256'],

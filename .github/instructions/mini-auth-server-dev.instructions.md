@@ -172,6 +172,28 @@ Remove unnecessary code.
 
 ---
 
+# JSDoc and Code Comments
+
+Use minimal, meaningful JSDoc comments.
+Comments must explain intent, not obvious syntax.
+Add JSDoc only where it provides value.
+
+Use JSDoc for:
+- Public service methods
+- Controllers
+- Complex business logic
+- Security-sensitive logic
+- Non-obvious behavior
+
+Keep comments short:
+- 1-3 lines max
+- No long explanations
+- No redundant comments
+- Do not add comments for every function
+- Comment intent, not syntax
+
+---
+
 # SOLID — Applied Practically
 
 Apply SOLID when it improves clarity.

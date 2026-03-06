@@ -2,6 +2,7 @@ import {
   ConflictException,
   ForbiddenException,
   Injectable,
+  Logger,
   UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -18,6 +19,7 @@ const BCRYPT_SALT_ROUNDS = 12;
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
@@ -48,12 +50,35 @@ export class AuthService {
     const verificationToken = await this.emailVerificationService.generate(
       user.id,
     );
-    await this.mailService.sendVerificationEmail(user.email, verificationToken);
+
+    let emailSent = true;
+    try {
+      await this.mailService.sendVerificationEmail(
+        user.email,
+        verificationToken,
+      );
+    } catch (err) {
+      emailSent = false;
+      this.logger.error(
+        `Failed to send verification email to ${user.email}`,
+        err,
+      );
+    }
 
     return {
       id: user.id,
       email: user.email,
       createdAt: user.createdAt,
+      emailSent,
+      ...(emailSent
+        ? {
+            message:
+              'Registration successful. Please check your email to verify your account.',
+          }
+        : {
+            message:
+              'Account created but verification email could not be sent. Use resend to try again.',
+          }),
     };
   }
 

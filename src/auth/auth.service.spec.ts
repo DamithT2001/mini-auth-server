@@ -9,6 +9,8 @@ import { AuthService } from './auth.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { JwtService } from '../infrastructure/security/jwt.service';
 import { ConfigService } from '@nestjs/config';
+import { EmailVerificationService } from './email-verification.service';
+import { MailService } from '../mail/mail.service';
 
 const mockPrisma = {
   user: {
@@ -31,6 +33,14 @@ const mockConfigService = {
   getOrThrow: jest.fn().mockReturnValue(900),
 };
 
+const mockEmailVerificationService = {
+  generate: jest.fn().mockResolvedValue('raw-verification-token'),
+};
+
+const mockMailService = {
+  sendVerificationEmail: jest.fn().mockResolvedValue(undefined),
+};
+
 describe('AuthService', () => {
   let service: AuthService;
 
@@ -41,6 +51,11 @@ describe('AuthService', () => {
         { provide: PrismaService, useValue: mockPrisma },
         { provide: JwtService, useValue: mockJwtService },
         { provide: ConfigService, useValue: mockConfigService },
+        {
+          provide: EmailVerificationService,
+          useValue: mockEmailVerificationService,
+        },
+        { provide: MailService, useValue: mockMailService },
       ],
     }).compile();
 
@@ -63,6 +78,11 @@ describe('AuthService', () => {
 
       expect(result.email).toBe(dto.email);
       expect(result).not.toHaveProperty('password');
+      expect(mockEmailVerificationService.generate).toHaveBeenCalledWith('1');
+      expect(mockMailService.sendVerificationEmail).toHaveBeenCalledWith(
+        dto.email,
+        'raw-verification-token',
+      );
     });
 
     it('should throw ConflictException for duplicate email', async () => {

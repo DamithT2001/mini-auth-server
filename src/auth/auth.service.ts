@@ -8,8 +8,11 @@ import { ConfigService } from '@nestjs/config';
 import { compare, hash } from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
 import { JwtService } from '../infrastructure/security/jwt.service';
+import { MailService } from '../mail/mail.service';
+import { EmailVerificationService } from './email-verification.service';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
+import { ResendVerificationDto } from './dto/resend-verification.dto';
 
 const BCRYPT_SALT_ROUNDS = 12;
 
@@ -19,6 +22,8 @@ export class AuthService {
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
+    private readonly emailVerificationService: EmailVerificationService,
+    private readonly mailService: MailService,
   ) {}
 
   async register(dto: RegisterDto) {
@@ -36,8 +41,14 @@ export class AuthService {
       data: {
         email: dto.email,
         password: hashedPassword,
+        isEmailVerified: false,
       },
     });
+
+    const verificationToken = await this.emailVerificationService.generate(
+      user.id,
+    );
+    await this.mailService.sendVerificationEmail(user.email, verificationToken);
 
     return {
       id: user.id,
@@ -101,5 +112,17 @@ export class AuthService {
       tokenType: 'Bearer',
       expiresIn: this.configService.getOrThrow<number>('JWT_ACCESS_EXPIRES_IN'),
     };
+  }
+
+  async resendVerificationEmail(dto: ResendVerificationDto): Promise<void> {
+    const user = await this.prisma.user.findUnique({
+      where: { email: dto.email },
+    });
+
+    // Return silently if user not found or already verified to avoid leaking info
+    if (!user || user.isEmailVerified) return;
+
+    const token = await this.emailVerificationService.generate(user.id);
+    await this.mailService.sendVerificationEmail(user.email, token);
   }
 }

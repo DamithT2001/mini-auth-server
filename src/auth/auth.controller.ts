@@ -19,7 +19,7 @@ import {
   ApiTooManyRequestsResponse,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-import { Throttle } from '@nestjs/throttler';
+import { minutes, Throttle } from '@nestjs/throttler';
 import { AuthService } from './auth.service';
 import { EmailVerificationService } from './email-verification.service';
 import { RequestMetadata } from './decorators/request-metadata.decorator';
@@ -41,7 +41,7 @@ export class AuthController {
   ) {}
 
   @Post('register')
-  @Throttle({ default: { ttl: 60_000, limit: 10 } })
+  @Throttle({ default: { ttl: minutes(1), limit: 10 } })
   @ApiOperation({ summary: 'Register a new user' })
   @ApiCreatedResponse({ description: 'User created' })
   @ApiBadRequestResponse({ description: 'Validation failed' })
@@ -53,7 +53,7 @@ export class AuthController {
 
   @Post('login')
   @HttpCode(HttpStatus.OK)
-  @Throttle({ default: { ttl: 60_000, limit: 10 } })
+  @Throttle({ default: { ttl: minutes(1), limit: 10 } })
   @ApiOperation({ summary: 'Login user' })
   @ApiOkResponse({ description: 'Login successful' })
   @ApiBadRequestResponse({ description: 'Validation failed' })
@@ -70,7 +70,7 @@ export class AuthController {
 
   @Post('verify-email/confirm')
   @HttpCode(HttpStatus.OK)
-  @Throttle({ default: { ttl: 60_000, limit: 10 } })
+  @Throttle({ default: { ttl: minutes(1), limit: 10 } })
   @ApiOperation({ summary: 'Confirm email verification (API)' })
   @ApiOkResponse({ description: 'Email successfully verified' })
   @ApiBadRequestResponse({ description: 'Invalid or expired token' })
@@ -81,7 +81,7 @@ export class AuthController {
   }
 
   @Get('verify-email/confirm')
-  @Throttle({ default: { ttl: 60_000, limit: 10 } })
+  @Throttle({ default: { ttl: minutes(1), limit: 10 } })
   @ApiOperation({ summary: 'Confirm email verification (browser link)' })
   @ApiOkResponse({ description: 'Email successfully verified' })
   @ApiBadRequestResponse({ description: 'Invalid or expired token' })
@@ -94,7 +94,7 @@ export class AuthController {
 
   @Post('verify-email/resend')
   @HttpCode(HttpStatus.OK)
-  @Throttle({ default: { ttl: 60_000, limit: 5 } })
+  @Throttle({ default: { ttl: minutes(1), limit: 5 } })
   @ApiOperation({ summary: 'Resend email verification link' })
   @ApiOkResponse({
     description: 'Verification email sent if account exists and is unverified',

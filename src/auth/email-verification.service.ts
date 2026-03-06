@@ -53,6 +53,9 @@ export class EmailVerificationService {
     }
 
     if (new Date() > record.expiresAt) {
+      await this.prisma.emailVerificationToken.delete({
+        where: { id: record.id },
+      });
       throw new BadRequestException('Verification token expired');
     }
 

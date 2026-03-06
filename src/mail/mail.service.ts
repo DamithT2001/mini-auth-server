@@ -19,6 +19,9 @@ export class MailService {
     });
   }
 
+  /**
+   * Sends a verification email containing a tokenized confirmation link that expires in 15 minutes.
+   */
   async sendVerificationEmail(to: string, token: string): Promise<void> {
     const baseUrl = this.configService.getOrThrow<string>('APP_BASE_URL');
     const verifyUrl = `${baseUrl}/auth/verify-email/confirm?token=${token}`;

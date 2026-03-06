@@ -28,6 +28,10 @@ import { RegisterDto } from './dto/register.dto';
 import { VerifyEmailDto } from './dto/verify-email.dto';
 import { ResendVerificationDto } from './dto/resend-verification.dto';
 
+/**
+ * Exposes authentication endpoints for registration, login, and email verification.
+ * All routes are rate-limited to mitigate brute-force and abuse.
+ */
 @ApiTags('auth')
 @Controller('auth')
 export class AuthController {

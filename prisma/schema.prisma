@@ -17,7 +17,7 @@ model User {
   roles         UserRole[]
   refreshTokens RefreshToken[]
   loginLogs     LoginLog[]
-  emailVerificationTokens EmailVerificationToken[]
+  emailVerificationToken EmailVerificationToken?
 
   @@map("users")
 }

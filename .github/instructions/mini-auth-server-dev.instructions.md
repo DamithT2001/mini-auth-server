@@ -70,31 +70,63 @@ Do not add patterns unless required.
 
 We follow clean architecture — but pragmatically.
 
-### Domain
-- Entities, enums, core logic.
-- No NestJS or Prisma imports.
-- Pure business logic only.
+### Directory Structure
 
-### Application
+```
+src/
+├── auth/                                    # Feature module (NestJS boundary)
+│   ├── auth.module.ts
+│   ├── application/                         # Use cases & business logic
+│   │   ├── auth.service.ts
+│   │   ├── auth.service.spec.ts
+│   │   ├── email-verification.service.ts
+│   │   └── email-verification.service.spec.ts
+│   └── interface/                           # HTTP layer
+│       ├── auth.controller.ts
+│       ├── decorators/
+│       │   └── request-metadata.decorator.ts
+│       └── dto/
+│           ├── login.dto.ts
+│           ├── register.dto.ts
+│           ├── verify-email.dto.ts
+│           └── resend-verification.dto.ts
+├── infrastructure/                          # External systems & adapters
+│   ├── persistence/                         # Database (Prisma)
+│   │   ├── prisma.service.ts
+│   │   └── prisma.module.ts
+│   ├── security/                            # JWT
+│   │   └── jwt.service.ts
+│   └── mail/                               # Email (Nodemailer)
+│       ├── mail.service.ts
+│       └── mail.module.ts
+├── common/
+│   └── filters/
+│       └── http-exception.filter.ts
+├── app.module.ts
+└── main.ts
+```
+
+### Layers
+
+**Application** (`auth/application/`)
 - Use cases (services).
 - Business orchestration.
-- DTOs.
-- Depends only on domain abstractions.
+- No HTTP or Prisma concerns — only domain logic.
 
-### Infrastructure
-- Prisma repositories.
-- JWT implementation.
-- External integrations.
+**Infrastructure** (`infrastructure/`)
+- Prisma persistence (`persistence/`).
+- JWT implementation (`security/`).
+- Mail delivery (`mail/`).
 
-### Interface
-- Controllers.
-- REST endpoints.
-- Guards.
+**Interface** (`auth/interface/`)
+- Controllers, DTOs, custom decorators.
+- HTTP request/response concerns only.
+- No business logic.
 
 Rules:
 - No circular dependencies.
 - Controllers contain no business logic.
-- Domain must not depend on infrastructure.
+- Application layer must not import from `interface/`.
 - Do not create layers unless necessary.
 
 Avoid artificial separation.

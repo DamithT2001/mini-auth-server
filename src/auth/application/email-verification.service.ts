@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { createHash, randomBytes } from 'crypto';
-import { PrismaService } from '../prisma/prisma.service';
+import { PrismaService } from '../../infrastructure/persistence/prisma.service';
 
 const TOKEN_EXPIRY_MINUTES = 15;
 

@@ -29,7 +29,6 @@ export class EmailVerificationService {
 
     const rawToken = randomBytes(32).toString('hex');
     const tokenHash = this.hashToken(rawToken);
-    const now = new Date();
 
     await this.prisma.$transaction([
       this.prisma.emailVerificationToken.deleteMany({ where: { userId } }),
@@ -37,7 +36,7 @@ export class EmailVerificationService {
         data: {
           userId,
           tokenHash,
-          expiresAt: new Date(now.getTime() + TOKEN_EXPIRY_MINUTES * 60 * 1000),
+          expiresAt: new Date(Date.now() + TOKEN_EXPIRY_MINUTES * 60_000),
         },
       }),
     ]);

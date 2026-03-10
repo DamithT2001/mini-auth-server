@@ -88,7 +88,7 @@ export class AuthService {
 
   /**
    * Validates credentials, enforces email verification, and issues a signed JWT access token.
-   * Logs each attempt with IP and User-Agent for audit purposes.
+   * Logs successful logins with IP and User-Agent for audit purposes.
    */
   async login(dto: LoginDto, ipAddress?: string, userAgent?: string) {
     const user = await this.prisma.user.findUnique({

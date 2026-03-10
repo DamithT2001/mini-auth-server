@@ -1,5 +1,4 @@
 import {
-  BadRequestException,
   Body,
   Controller,
   Get,
@@ -86,9 +85,8 @@ export class AuthController {
   @ApiOkResponse({ description: 'Email successfully verified' })
   @ApiBadRequestResponse({ description: 'Invalid or expired token' })
   @ApiTooManyRequestsResponse({ description: 'Too many requests' })
-  async confirmVerificationGet(@Query('token') token: string) {
-    if (!token) throw new BadRequestException('token is required');
-    await this.emailVerificationService.verify(token);
+  async confirmVerificationGet(@Query() dto: VerifyEmailDto) {
+    await this.emailVerificationService.verify(dto.token);
     return { message: 'Email successfully verified' };
   }
 

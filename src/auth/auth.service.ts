@@ -149,7 +149,7 @@ export class AuthService {
 
   /**
    * Resends the verification email. Responds silently for unknown or already-verified
-   * accounts to prevent user enumeration.
+   * accounts to prevent user enumeration. Mail errors are logged but not surfaced.
    */
   async resendVerificationEmail(dto: ResendVerificationDto): Promise<void> {
     const user = await this.prisma.user.findUnique({
@@ -160,6 +160,14 @@ export class AuthService {
     if (!user || user.isEmailVerified) return;
 
     const token = await this.emailVerificationService.generate(user.id);
-    await this.mailService.sendVerificationEmail(user.email, token);
+
+    try {
+      await this.mailService.sendVerificationEmail(user.email, token);
+    } catch (err) {
+      this.logger.error(
+        `Failed to resend verification email to ${user.email}`,
+        err,
+      );
+    }
   }
 }

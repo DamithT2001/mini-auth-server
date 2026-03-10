@@ -29,6 +29,7 @@ export class EmailVerificationService {
 
     const rawToken = randomBytes(32).toString('hex');
     const tokenHash = this.hashToken(rawToken);
+    const now = new Date();
 
     await this.prisma.$transaction([
       this.prisma.emailVerificationToken.deleteMany({ where: { userId } }),
@@ -36,7 +37,7 @@ export class EmailVerificationService {
         data: {
           userId,
           tokenHash,
-          expiresAt: new Date(Date.now() + TOKEN_EXPIRY_MINUTES * 60 * 1000),
+          expiresAt: new Date(now.getTime() + TOKEN_EXPIRY_MINUTES * 60 * 1000),
         },
       }),
     ]);
@@ -46,7 +47,7 @@ export class EmailVerificationService {
 
   /**
    * Validates the raw token against its stored hash, enforces expiry, and marks the user's
-   * email as verified. Cleans up the token record on success or expiry.
+   * email as verified. Cleans up the token record atomically with the verification update.
    */
   async verify(rawToken: string): Promise<void> {
     const tokenHash = this.hashToken(rawToken);
@@ -71,13 +72,14 @@ export class EmailVerificationService {
       throw new BadRequestException('Email already verified');
     }
 
-    await this.prisma.user.update({
-      where: { id: record.userId },
-      data: { isEmailVerified: true },
-    });
-
-    await this.prisma.emailVerificationToken.delete({
-      where: { id: record.id },
-    });
+    await this.prisma.$transaction([
+      this.prisma.user.update({
+        where: { id: record.userId },
+        data: { isEmailVerified: true },
+      }),
+      this.prisma.emailVerificationToken.delete({
+        where: { id: record.id },
+      }),
+    ]);
   }
 }

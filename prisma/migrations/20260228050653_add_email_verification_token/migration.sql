@@ -13,7 +13,7 @@ CREATE TABLE "email_verification_tokens" (
 CREATE UNIQUE INDEX "email_verification_tokens_token_hash_key" ON "email_verification_tokens"("token_hash");
 
 -- CreateIndex
-CREATE INDEX "email_verification_tokens_user_id_idx" ON "email_verification_tokens"("user_id");
+CREATE UNIQUE INDEX "email_verification_tokens_user_id_key" ON "email_verification_tokens"("user_id");
 
 -- AddForeignKey
 ALTER TABLE "email_verification_tokens" ADD CONSTRAINT "email_verification_tokens_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;

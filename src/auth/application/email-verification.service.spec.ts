@@ -1,7 +1,7 @@
 import { BadRequestException } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { EmailVerificationService } from './email-verification.service';
-import { PrismaService } from '../prisma/prisma.service';
+import { PrismaService } from '../../infrastructure/persistence/prisma.service';
 
 const mockPrisma = {
   user: { findUnique: jest.fn(), update: jest.fn() },

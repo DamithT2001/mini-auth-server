@@ -70,26 +70,50 @@ Do not add patterns unless required.
 
 We follow clean architecture — but pragmatically.
 
-### Domain
-- Entities, enums, core logic.
-- No NestJS or Prisma imports.
-- Pure business logic only.
+### Directory Structure
 
-### Application
-- Use cases (services).
-- Business orchestration.
-- DTOs.
-- Depends only on domain abstractions.
+```
+src/
+├── app.module.ts
+├── main.ts
+├── auth/
+│   ├── auth.module.ts
+│   ├── application/          ← services (business logic)
+│   │   ├── auth.service.ts
+│   │   └── email-verification.service.ts
+│   └── interface/            ← controller, DTOs, decorators
+│       ├── auth.controller.ts
+│       ├── dto/
+│       │   ├── login.dto.ts
+│       │   ├── register.dto.ts
+│       │   ├── resend-verification.dto.ts
+│       │   └── verify-email.dto.ts
+│       └── decorators/
+│           └── request-metadata.decorator.ts
+├── common/
+│   └── filters/
+│       └── http-exception.filter.ts
+└── infrastructure/
+    ├── persistence/          ← Prisma (database)
+    │   ├── prisma.module.ts
+    │   └── prisma.service.ts
+    ├── security/             ← JWT
+    │   └── jwt.service.ts
+    └── mail/                 ← email sending
+        ├── mail.module.ts
+        └── mail.service.ts
+```
 
-### Infrastructure
-- Prisma repositories.
-- JWT implementation.
-- External integrations.
+When adding a new feature module (e.g. `users`), follow the same pattern:
+- `users/application/` for services
+- `users/interface/` for controller, DTOs, decorators
 
-### Interface
-- Controllers.
-- REST endpoints.
-- Guards.
+### Layer Rules
+
+- **application/**: Services contain business orchestration. Import DTOs from `../interface/dto/`, infrastructure from `../../infrastructure/`.
+- **interface/**: Controllers delegate entirely to services — no business logic. DTOs and decorators live here.
+- **infrastructure/**: Prisma, JWT, mail. No feature-specific business logic.
+- **common/**: Shared cross-cutting concerns (filters, guards, interceptors).
 
 Rules:
 - No circular dependencies.

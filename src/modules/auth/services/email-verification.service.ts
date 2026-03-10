@@ -1,16 +1,17 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { createHash, randomBytes } from 'crypto';
-import { PrismaService } from '../../infrastructure/persistence/prisma.service';
+import { PrismaService } from '../../../infrastructure/database/prisma.service';
+import { TokenHashService } from '../../../infrastructure/security/token-hash.service';
+import { CryptoService } from '../../../infrastructure/security/crypto.service';
 
 const TOKEN_EXPIRY_MINUTES = 15;
 
 @Injectable()
 export class EmailVerificationService {
-  constructor(private readonly prisma: PrismaService) {}
-
-  private hashToken(token: string): string {
-    return createHash('sha256').update(token).digest('hex');
-  }
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly tokenHashService: TokenHashService,
+    private readonly cryptoService: CryptoService,
+  ) {}
 
   /**
    * Generates a secure random token, stores its SHA-256 hash, and invalidates any prior token.
@@ -27,8 +28,8 @@ export class EmailVerificationService {
       throw new BadRequestException('Email already verified');
     }
 
-    const rawToken = randomBytes(32).toString('hex');
-    const tokenHash = this.hashToken(rawToken);
+    const rawToken = this.cryptoService.generateToken();
+    const tokenHash = this.tokenHashService.sha256(rawToken);
 
     await this.prisma.$transaction([
       this.prisma.emailVerificationToken.deleteMany({ where: { userId } }),
@@ -49,7 +50,7 @@ export class EmailVerificationService {
    * email as verified. Cleans up the token record atomically with the verification update.
    */
   async verify(rawToken: string): Promise<void> {
-    const tokenHash = this.hashToken(rawToken);
+    const tokenHash = this.tokenHashService.sha256(rawToken);
 
     const record = await this.prisma.emailVerificationToken.findUnique({
       where: { tokenHash },

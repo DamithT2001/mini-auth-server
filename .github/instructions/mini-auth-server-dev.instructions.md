@@ -68,7 +68,7 @@ Do not add patterns unless required.
 
 # Architecture (Clean but Practical)
 
-We follow clean architecture — but pragmatically.
+We follow a feature-module architecture grouped under `modules/`, with shared infrastructure kept separate.
 
 ### Directory Structure
 
@@ -76,49 +76,85 @@ We follow clean architecture — but pragmatically.
 src/
 ├── app.module.ts
 ├── main.ts
-├── auth/
-│   ├── auth.module.ts
-│   ├── application/          ← services (business logic)
+│
+├── modules/
+│   ├── auth/
+│   │   ├── auth.module.ts
+│   │   ├── auth.controller.ts
 │   │   ├── auth.service.ts
-│   │   └── email-verification.service.ts
-│   └── interface/            ← controller, DTOs, decorators
-│       ├── auth.controller.ts
-│       ├── dto/
-│       │   ├── login.dto.ts
-│       │   ├── register.dto.ts
-│       │   ├── resend-verification.dto.ts
-│       │   └── verify-email.dto.ts
-│       └── decorators/
-│           └── request-metadata.decorator.ts
-├── common/
-│   └── filters/
-│       └── http-exception.filter.ts
-└── infrastructure/
-    ├── persistence/          ← Prisma (database)
-    │   ├── prisma.module.ts
-    │   └── prisma.service.ts
-    ├── security/             ← JWT
-    │   └── jwt.service.ts
-    └── mail/                 ← email sending
-        ├── mail.module.ts
-        └── mail.service.ts
+│   │   ├── services/
+│   │   │   ├── email-verification.service.ts
+│   │   │   ├── refresh-token.service.ts
+│   │   │   └── login-audit.service.ts
+│   │   ├── dto/
+│   │   │   ├── login.dto.ts
+│   │   │   ├── register.dto.ts
+│   │   │   ├── refresh-token.dto.ts
+│   │   │   └── verify-email.dto.ts
+│   │   ├── guards/
+│   │   │   └── jwt-auth.guard.ts
+│   │   ├── strategies/
+│   │   │   └── jwt.strategy.ts
+│   │   └── types/
+│   │       └── jwt-payload.type.ts
+│   ├── oauth/
+│   │   ├── oauth.module.ts
+│   │   ├── oauth.controller.ts
+│   │   ├── oauth.service.ts
+│   │   ├── services/
+│   │   │   ├── authorization-code.service.ts
+│   │   │   ├── pkce.service.ts
+│   │   │   └── token.service.ts
+│   │   └── dto/
+│   │       ├── authorize.dto.ts
+│   │       └── token.dto.ts
+│   └── users/
+│       ├── users.module.ts
+│       └── users.service.ts
+│
+├── infrastructure/
+│   ├── database/
+│   │   └── prisma.service.ts
+│   ├── security/
+│   │   ├── jwt.service.ts
+│   │   ├── password.service.ts
+│   │   ├── token-hash.service.ts
+│   │   └── crypto.service.ts
+│   └── config/
+│       └── jwt.config.ts
+│
+├── mail/
+│   ├── mail.module.ts
+│   └── mail.service.ts
+│
+└── common/
+    ├── decorators/
+    │   └── request-metadata.decorator.ts
+    └── filters/
+        └── http-exception.filter.ts
 ```
 
-When adding a new feature module (e.g. `users`), follow the same pattern:
-- `users/application/` for services
-- `users/interface/` for controller, DTOs, decorators
+When adding a new feature module (e.g. `notifications`), follow the same pattern:
+- Module root: `modules/<feature>/<feature>.module.ts`, `<feature>.controller.ts`, `<feature>.service.ts`
+- Sub-services: `modules/<feature>/services/`
+- DTOs: `modules/<feature>/dto/`
+- Guards: `modules/<feature>/guards/`
+- Types: `modules/<feature>/types/`
 
 ### Layer Rules
 
-- **application/**: Services contain business orchestration. Import DTOs from `../interface/dto/`, infrastructure from `../../infrastructure/`.
-- **interface/**: Controllers delegate entirely to services — no business logic. DTOs and decorators live here.
-- **infrastructure/**: Prisma, JWT, mail. No feature-specific business logic.
-- **common/**: Shared cross-cutting concerns (filters, guards, interceptors).
+- **modules/<feature>/**: Feature controller delegates entirely to the feature service — no business logic in controllers. DTOs and types live inside the module.
+- **modules/<feature>/services/**: Focused sub-services for a single concern (email verification, audit logging, token operations). Import infrastructure from `../../infrastructure/` or `../../../infrastructure/`.
+- **infrastructure/database/**: Prisma service. Exported as a global module — import `PrismaService` directly anywhere.
+- **infrastructure/security/**: JWT, password hashing, token hashing, and secure random generation. No feature-specific logic.
+- **infrastructure/config/**: NestJS `registerAs` configuration factories.
+- **mail/**: Email sending module. Import `MailModule` in any feature module that needs to send email.
+- **common/**: Shared decorators, filters, and guards used across multiple modules.
 
 Rules:
 - No circular dependencies.
 - Controllers contain no business logic.
-- Domain must not depend on infrastructure.
+- Do not import feature modules from infrastructure.
 - Do not create layers unless necessary.
 
 Avoid artificial separation.

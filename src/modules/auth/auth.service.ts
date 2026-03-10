@@ -6,16 +6,15 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { compare, hash } from 'bcrypt';
-import { PrismaService } from '../../infrastructure/persistence/prisma.service';
+import { PrismaService } from '../../infrastructure/database/prisma.service';
 import { JwtService } from '../../infrastructure/security/jwt.service';
-import { MailService } from '../../infrastructure/mail/mail.service';
-import { EmailVerificationService } from './email-verification.service';
-import { LoginDto } from '../interface/dto/login.dto';
-import { RegisterDto } from '../interface/dto/register.dto';
-import { ResendVerificationDto } from '../interface/dto/resend-verification.dto';
-
-const BCRYPT_SALT_ROUNDS = 12;
+import { PasswordService } from '../../infrastructure/security/password.service';
+import { MailService } from '../../mail/mail.service';
+import { EmailVerificationService } from './services/email-verification.service';
+import { LoginAuditService } from './services/login-audit.service';
+import { LoginDto } from './dto/login.dto';
+import { RegisterDto } from './dto/register.dto';
+import { ResendVerificationDto } from './dto/resend-verification.dto';
 
 @Injectable()
 export class AuthService {
@@ -26,6 +25,8 @@ export class AuthService {
     private readonly configService: ConfigService,
     private readonly emailVerificationService: EmailVerificationService,
     private readonly mailService: MailService,
+    private readonly passwordService: PasswordService,
+    private readonly loginAuditService: LoginAuditService,
   ) {}
 
   /**
@@ -41,7 +42,7 @@ export class AuthService {
       throw new ConflictException('Email already registered');
     }
 
-    const hashedPassword = await hash(dto.password, BCRYPT_SALT_ROUNDS);
+    const hashedPassword = await this.passwordService.hash(dto.password);
 
     const user = await this.prisma.user.create({
       data: {
@@ -106,7 +107,10 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    const passwordValid = await compare(dto.password, user.password);
+    const passwordValid = await this.passwordService.compare(
+      dto.password,
+      user.password,
+    );
 
     if (!passwordValid) {
       throw new UnauthorizedException('Invalid credentials');
@@ -132,13 +136,7 @@ export class AuthService {
       roles,
     });
 
-    await this.prisma.loginLog.create({
-      data: {
-        userId: user.id,
-        ipAddress,
-        userAgent,
-      },
-    });
+    await this.loginAuditService.record(user.id, ipAddress, userAgent);
 
     return {
       accessToken,

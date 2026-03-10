@@ -2,8 +2,9 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { minutes, ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
-import { PrismaModule } from './infrastructure/persistence/prisma.module';
-import { AuthModule } from './auth/auth.module';
+import { PrismaModule } from './infrastructure/database/prisma.module';
+import { AuthModule } from './modules/auth/auth.module';
+import { OAuthModule } from './modules/oauth/oauth.module';
 
 @Module({
   imports: [
@@ -12,6 +13,7 @@ import { AuthModule } from './auth/auth.module';
     ThrottlerModule.forRoot([{ ttl: minutes(1), limit: 60 }]),
     PrismaModule,
     AuthModule,
+    OAuthModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })

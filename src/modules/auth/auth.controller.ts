@@ -19,9 +19,9 @@ import {
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { minutes, Throttle } from '@nestjs/throttler';
-import { AuthService } from '../application/auth.service';
-import { EmailVerificationService } from '../application/email-verification.service';
-import { RequestMetadata } from './decorators/request-metadata.decorator';
+import { AuthService } from './auth.service';
+import { EmailVerificationService } from './services/email-verification.service';
+import { RequestMetadata } from '../../common/decorators/request-metadata.decorator';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { VerifyEmailDto } from './dto/verify-email.dto';

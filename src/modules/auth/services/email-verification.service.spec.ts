@@ -1,7 +1,9 @@
 import { BadRequestException } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { EmailVerificationService } from './email-verification.service';
-import { PrismaService } from '../../infrastructure/persistence/prisma.service';
+import { PrismaService } from '../../../infrastructure/database/prisma.service';
+import { TokenHashService } from '../../../infrastructure/security/token-hash.service';
+import { CryptoService } from '../../../infrastructure/security/crypto.service';
 
 const mockPrisma = {
   user: { findUnique: jest.fn(), update: jest.fn() },
@@ -14,6 +16,14 @@ const mockPrisma = {
   $transaction: jest.fn(),
 };
 
+const mockTokenHashService = {
+  sha256: jest.fn().mockReturnValue('hashed-token'),
+};
+
+const mockCryptoService = {
+  generateToken: jest.fn().mockReturnValue('a'.repeat(64)),
+};
+
 describe('EmailVerificationService', () => {
   let service: EmailVerificationService;
 
@@ -22,6 +32,8 @@ describe('EmailVerificationService', () => {
       providers: [
         EmailVerificationService,
         { provide: PrismaService, useValue: mockPrisma },
+        { provide: TokenHashService, useValue: mockTokenHashService },
+        { provide: CryptoService, useValue: mockCryptoService },
       ],
     }).compile();
 
@@ -36,6 +48,8 @@ describe('EmailVerificationService', () => {
         isEmailVerified: false,
       });
       mockPrisma.$transaction.mockResolvedValue([{ count: 0 }, { id: 'tok1' }]);
+      mockTokenHashService.sha256.mockReturnValue('hashed-token');
+      mockCryptoService.generateToken.mockReturnValue('a'.repeat(64));
 
       const token = await service.generate('u1');
 
@@ -85,9 +99,7 @@ describe('EmailVerificationService', () => {
         BadRequestException,
       );
       expect(mockPrisma.emailVerificationToken.deleteMany).toHaveBeenCalledWith(
-        {
-          where: { id: 'tok1' },
-        },
+        { where: { id: 'tok1' } },
       );
     });
 

@@ -5,13 +5,14 @@ import {
   Logger,
   UnauthorizedException,
 } from '@nestjs/common';
-import * as bcrypt from 'bcrypt';
 import { AuthService } from './auth.service';
-import { PrismaService } from '../../infrastructure/persistence/prisma.service';
+import { PrismaService } from '../../infrastructure/database/prisma.service';
 import { JwtService } from '../../infrastructure/security/jwt.service';
+import { PasswordService } from '../../infrastructure/security/password.service';
 import { ConfigService } from '@nestjs/config';
-import { EmailVerificationService } from './email-verification.service';
-import { MailService } from '../../infrastructure/mail/mail.service';
+import { EmailVerificationService } from './services/email-verification.service';
+import { LoginAuditService } from './services/login-audit.service';
+import { MailService } from '../../mail/mail.service';
 
 const mockPrisma = {
   user: {
@@ -20,9 +21,6 @@ const mockPrisma = {
   },
   clientApplication: {
     findUnique: jest.fn(),
-  },
-  loginLog: {
-    create: jest.fn(),
   },
 };
 
@@ -42,6 +40,15 @@ const mockMailService = {
   sendVerificationEmail: jest.fn().mockResolvedValue(undefined),
 };
 
+const mockPasswordService = {
+  hash: jest.fn().mockResolvedValue('hashed-password'),
+  compare: jest.fn().mockResolvedValue(true),
+};
+
+const mockLoginAuditService = {
+  record: jest.fn().mockResolvedValue(undefined),
+};
+
 describe('AuthService', () => {
   let service: AuthService;
 
@@ -57,6 +64,8 @@ describe('AuthService', () => {
           useValue: mockEmailVerificationService,
         },
         { provide: MailService, useValue: mockMailService },
+        { provide: PasswordService, useValue: mockPasswordService },
+        { provide: LoginAuditService, useValue: mockLoginAuditService },
       ],
     }).compile();
 
@@ -121,16 +130,10 @@ describe('AuthService', () => {
       clientId: 'my-client',
     };
 
-    let hashedPassword: string;
-
-    beforeAll(async () => {
-      hashedPassword = await bcrypt.hash(plainPassword, 10);
-    });
-
     const buildUser = (overrides: Record<string, unknown> = {}) => ({
       id: 'user-1',
       email: loginDto.email,
-      password: hashedPassword,
+      password: 'hashed-password',
       isEmailVerified: true,
       roles: [{ role: { name: 'user' } }],
       ...overrides,
@@ -142,7 +145,7 @@ describe('AuthService', () => {
         id: 'client-1',
         clientId: loginDto.clientId,
       });
-      mockPrisma.loginLog.create.mockResolvedValue({});
+      mockPasswordService.compare.mockResolvedValue(true);
       mockConfigService.getOrThrow.mockReturnValue(900);
       mockJwtService.signAccessToken.mockReturnValue('signed.jwt.token');
 
@@ -151,7 +154,7 @@ describe('AuthService', () => {
       expect(result.accessToken).toBe('signed.jwt.token');
       expect(result.tokenType).toBe('Bearer');
       expect(result.expiresIn).toBe(900);
-      expect(mockPrisma.loginLog.create).toHaveBeenCalledTimes(1);
+      expect(mockLoginAuditService.record).toHaveBeenCalledTimes(1);
     });
 
     it('should throw UnauthorizedException when user not found', async () => {
@@ -163,9 +166,8 @@ describe('AuthService', () => {
     });
 
     it('should throw UnauthorizedException when password is wrong', async () => {
-      mockPrisma.user.findUnique.mockResolvedValue(
-        buildUser({ password: await bcrypt.hash('different-password', 10) }),
-      );
+      mockPrisma.user.findUnique.mockResolvedValue(buildUser());
+      mockPasswordService.compare.mockResolvedValue(false);
 
       await expect(service.login(loginDto)).rejects.toThrow(
         UnauthorizedException,
@@ -176,12 +178,14 @@ describe('AuthService', () => {
       mockPrisma.user.findUnique.mockResolvedValue(
         buildUser({ isEmailVerified: false }),
       );
+      mockPasswordService.compare.mockResolvedValue(true);
 
       await expect(service.login(loginDto)).rejects.toThrow(ForbiddenException);
     });
 
     it('should throw UnauthorizedException when client is not found', async () => {
       mockPrisma.user.findUnique.mockResolvedValue(buildUser());
+      mockPasswordService.compare.mockResolvedValue(true);
       mockPrisma.clientApplication.findUnique.mockResolvedValue(null);
 
       await expect(service.login(loginDto)).rejects.toThrow(
@@ -189,12 +193,13 @@ describe('AuthService', () => {
       );
     });
 
-    it('should NOT create a login log when JWT signing fails', async () => {
+    it('should NOT record audit log when JWT signing fails', async () => {
       mockPrisma.user.findUnique.mockResolvedValue(buildUser());
       mockPrisma.clientApplication.findUnique.mockResolvedValue({
         id: 'client-1',
         clientId: loginDto.clientId,
       });
+      mockPasswordService.compare.mockResolvedValue(true);
       mockJwtService.signAccessToken.mockImplementation(() => {
         throw new Error('JWT signing failed');
       });
@@ -202,7 +207,7 @@ describe('AuthService', () => {
       await expect(service.login(loginDto)).rejects.toThrow(
         'JWT signing failed',
       );
-      expect(mockPrisma.loginLog.create).not.toHaveBeenCalled();
+      expect(mockLoginAuditService.record).not.toHaveBeenCalled();
     });
   });
 

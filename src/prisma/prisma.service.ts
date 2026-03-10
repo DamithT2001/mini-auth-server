@@ -4,6 +4,10 @@ import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '@prisma/client';
 import { Pool } from 'pg';
 
+/**
+ * Wraps PrismaClient with a native pg connection pool via the Prisma PostgreSQL adapter.
+ * Manages database connection lifecycle on module init and destroy.
+ */
 @Injectable()
 export class PrismaService
   extends PrismaClient

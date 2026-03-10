@@ -2,6 +2,7 @@ import { Test } from '@nestjs/testing';
 import {
   ConflictException,
   ForbiddenException,
+  Logger,
   UnauthorizedException,
 } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
@@ -9,6 +10,8 @@ import { AuthService } from './auth.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { JwtService } from '../infrastructure/security/jwt.service';
 import { ConfigService } from '@nestjs/config';
+import { EmailVerificationService } from './email-verification.service';
+import { MailService } from '../mail/mail.service';
 
 const mockPrisma = {
   user: {
@@ -31,6 +34,14 @@ const mockConfigService = {
   getOrThrow: jest.fn().mockReturnValue(900),
 };
 
+const mockEmailVerificationService = {
+  generate: jest.fn().mockResolvedValue('raw-verification-token'),
+};
+
+const mockMailService = {
+  sendVerificationEmail: jest.fn().mockResolvedValue(undefined),
+};
+
 describe('AuthService', () => {
   let service: AuthService;
 
@@ -41,6 +52,11 @@ describe('AuthService', () => {
         { provide: PrismaService, useValue: mockPrisma },
         { provide: JwtService, useValue: mockJwtService },
         { provide: ConfigService, useValue: mockConfigService },
+        {
+          provide: EmailVerificationService,
+          useValue: mockEmailVerificationService,
+        },
+        { provide: MailService, useValue: mockMailService },
       ],
     }).compile();
 
@@ -63,12 +79,37 @@ describe('AuthService', () => {
 
       expect(result.email).toBe(dto.email);
       expect(result).not.toHaveProperty('password');
+      expect(mockEmailVerificationService.generate).toHaveBeenCalledWith('1');
+      expect(mockMailService.sendVerificationEmail).toHaveBeenCalledWith(
+        dto.email,
+        'raw-verification-token',
+      );
     });
 
     it('should throw ConflictException for duplicate email', async () => {
       mockPrisma.user.findUnique.mockResolvedValue({ id: '1' });
 
       await expect(service.register(dto)).rejects.toThrow(ConflictException);
+    });
+
+    it('should return emailSent=false when mail delivery fails', async () => {
+      const logSpy = jest.spyOn(Logger.prototype, 'error').mockImplementation();
+      mockPrisma.user.findUnique.mockResolvedValue(null);
+      mockPrisma.user.create.mockResolvedValue({
+        id: '1',
+        email: dto.email,
+        createdAt: new Date(),
+      });
+      mockMailService.sendVerificationEmail.mockRejectedValue(
+        new Error('SMTP error'),
+      );
+
+      const result = await service.register(dto);
+
+      expect(result.emailSent).toBe(false);
+      expect(result.email).toBe(dto.email);
+      expect(logSpy).toHaveBeenCalled();
+      logSpy.mockRestore();
     });
   });
 
@@ -162,6 +203,66 @@ describe('AuthService', () => {
         'JWT signing failed',
       );
       expect(mockPrisma.loginLog.create).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('resendVerificationEmail', () => {
+    const dto = { email: 'unverified@example.com' };
+
+    it('should return silently when user does not exist', async () => {
+      mockPrisma.user.findUnique.mockResolvedValue(null);
+
+      await expect(
+        service.resendVerificationEmail(dto),
+      ).resolves.toBeUndefined();
+      expect(mockEmailVerificationService.generate).not.toHaveBeenCalled();
+    });
+
+    it('should return silently when email is already verified', async () => {
+      mockPrisma.user.findUnique.mockResolvedValue({
+        id: 'u1',
+        email: dto.email,
+        isEmailVerified: true,
+      });
+
+      await expect(
+        service.resendVerificationEmail(dto),
+      ).resolves.toBeUndefined();
+      expect(mockEmailVerificationService.generate).not.toHaveBeenCalled();
+    });
+
+    it('should generate token and send email for unverified user', async () => {
+      mockPrisma.user.findUnique.mockResolvedValue({
+        id: 'u1',
+        email: dto.email,
+        isEmailVerified: false,
+      });
+
+      await service.resendVerificationEmail(dto);
+
+      expect(mockEmailVerificationService.generate).toHaveBeenCalledWith('u1');
+      expect(mockMailService.sendVerificationEmail).toHaveBeenCalledWith(
+        dto.email,
+        'raw-verification-token',
+      );
+    });
+
+    it('should not throw when mail send fails', async () => {
+      const logSpy = jest.spyOn(Logger.prototype, 'error').mockImplementation();
+      mockPrisma.user.findUnique.mockResolvedValue({
+        id: 'u1',
+        email: dto.email,
+        isEmailVerified: false,
+      });
+      mockMailService.sendVerificationEmail.mockRejectedValue(
+        new Error('SMTP error'),
+      );
+
+      await expect(
+        service.resendVerificationEmail(dto),
+      ).resolves.toBeUndefined();
+      expect(logSpy).toHaveBeenCalled();
+      logSpy.mockRestore();
     });
   });
 });

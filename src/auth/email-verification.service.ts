@@ -61,7 +61,7 @@ export class EmailVerificationService {
     }
 
     if (new Date() > record.expiresAt) {
-      await this.prisma.emailVerificationToken.delete({
+      await this.prisma.emailVerificationToken.deleteMany({
         where: { id: record.id },
       });
       throw new BadRequestException('Verification token expired');
@@ -76,7 +76,7 @@ export class EmailVerificationService {
         where: { id: record.userId },
         data: { isEmailVerified: true },
       }),
-      this.prisma.emailVerificationToken.delete({
+      this.prisma.emailVerificationToken.deleteMany({
         where: { id: record.id },
       }),
     ]);

@@ -87,7 +87,11 @@ export class AuthController {
   @ApiBadRequestResponse({ description: 'Invalid or expired token' })
   @ApiTooManyRequestsResponse({ description: 'Too many requests' })
   async confirmVerificationGet(@Query('token') token: string) {
-    if (!token) throw new BadRequestException('token is required');
+    if (!token || !/^[0-9a-f]{64}$/i.test(token)) {
+      throw new BadRequestException(
+        'token must be a 64-character hexadecimal string',
+      );
+    }
     await this.emailVerificationService.verify(token);
     return { message: 'Email successfully verified' };
   }

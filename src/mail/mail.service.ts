@@ -10,7 +10,7 @@ export class MailService {
   constructor(private readonly configService: ConfigService) {
     this.transporter = createTransport({
       host: this.configService.getOrThrow<string>('MAIL_HOST'),
-      port: this.configService.getOrThrow<number>('MAIL_PORT'),
+      port: parseInt(this.configService.getOrThrow<string>('MAIL_PORT'), 10),
       secure: this.configService.get<string>('MAIL_SECURE') === 'true',
       auth: {
         user: this.configService.getOrThrow<string>('MAIL_USER'),

@@ -77,14 +77,18 @@ describe('EmailVerificationService', () => {
         expiresAt: new Date(Date.now() - 1000),
         user: { isEmailVerified: false },
       });
-      mockPrisma.emailVerificationToken.delete.mockResolvedValue({});
+      mockPrisma.emailVerificationToken.deleteMany.mockResolvedValue({
+        count: 1,
+      });
 
       await expect(service.verify('expired-token')).rejects.toThrow(
         BadRequestException,
       );
-      expect(mockPrisma.emailVerificationToken.delete).toHaveBeenCalledWith({
-        where: { id: 'tok1' },
-      });
+      expect(mockPrisma.emailVerificationToken.deleteMany).toHaveBeenCalledWith(
+        {
+          where: { id: 'tok1' },
+        },
+      );
     });
 
     it('should throw BadRequestException when email already verified', async () => {

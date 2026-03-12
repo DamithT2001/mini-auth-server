@@ -19,13 +19,13 @@ import {
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { minutes, Throttle } from '@nestjs/throttler';
-import { AuthService } from './auth.service';
-import { EmailVerificationService } from './email-verification.service';
+import { AuthService } from '../application/auth.service';
+import { EmailVerificationService } from '../application/email-verification.service';
 import { RequestMetadata } from './decorators/request-metadata.decorator';
-import { LoginDto } from './dto/login.dto';
-import { RegisterDto } from './dto/register.dto';
-import { VerifyEmailDto } from './dto/verify-email.dto';
-import { ResendVerificationDto } from './dto/resend-verification.dto';
+import { LoginDto } from '../application/dto/login.dto';
+import { RegisterDto } from '../application/dto/register.dto';
+import { VerifyEmailDto } from '../application/dto/verify-email.dto';
+import { ResendVerificationDto } from '../application/dto/resend-verification.dto';
 
 /**
  * Exposes authentication endpoints for registration, login, and email verification.

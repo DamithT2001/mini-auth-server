@@ -1,9 +1,9 @@
 import { Module } from '@nestjs/common';
-import { AuthController } from './auth.controller';
-import { AuthService } from './auth.service';
-import { EmailVerificationService } from './email-verification.service';
+import { AuthController } from './interface/auth.controller';
+import { AuthService } from './application/auth.service';
+import { EmailVerificationService } from './application/email-verification.service';
 import { JwtService } from '../infrastructure/security/jwt.service';
-import { MailModule } from '../mail/mail.module';
+import { MailModule } from '../infrastructure/mail/mail.module';
 
 @Module({
   imports: [MailModule],

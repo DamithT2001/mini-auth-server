@@ -7,11 +7,11 @@ import {
 } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { AuthService } from './auth.service';
-import { PrismaService } from '../prisma/prisma.service';
-import { JwtService } from '../infrastructure/security/jwt.service';
+import { PrismaService } from '../../infrastructure/persistence/prisma.service';
+import { JwtService } from '../../infrastructure/security/jwt.service';
 import { ConfigService } from '@nestjs/config';
 import { EmailVerificationService } from './email-verification.service';
-import { MailService } from '../mail/mail.service';
+import { MailService } from '../../infrastructure/mail/mail.service';
 
 const mockPrisma = {
   user: {

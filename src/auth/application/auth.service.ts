@@ -7,9 +7,9 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { compare, hash } from 'bcrypt';
-import { PrismaService } from '../prisma/prisma.service';
-import { JwtService } from '../infrastructure/security/jwt.service';
-import { MailService } from '../mail/mail.service';
+import { PrismaService } from '../../infrastructure/persistence/prisma.service';
+import { JwtService } from '../../infrastructure/security/jwt.service';
+import { MailService } from '../../infrastructure/mail/mail.service';
 import { EmailVerificationService } from './email-verification.service';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
